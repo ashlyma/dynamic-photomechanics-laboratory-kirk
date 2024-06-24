@@ -10,56 +10,7 @@ tab1, tab2 = st.tabs(["Form", "Search"])
 
 #Shows the contant of tab2 (Search)
 with tab2:
-    # Function to authenticate and get data from Synology API
-    def get_synology_data(api_url, username, password):
-        session = requests.Session()
-        
-        # Authenticate
-        auth_payload = {
-            'api': 'SYNO.API.Auth',
-            'version': '2',
-            'method': 'login',
-            'account': username,
-            'passwd': password,
-            'session': 'FileStation',
-            'format': 'cookie'
-        }
-        auth_response = session.get(f"{api_url}/auth.cgi", params=auth_payload)
-        auth_response.raise_for_status()
-        auth_data = auth_response.json()
-
-        if auth_data['success']:
-            sid = auth_data['data']['sid']
-
-            # Fetch data (example: list files in a directory)
-            list_payload = {
-                'api': 'SYNO.FileStation.List',
-                'version': '2',
-                'method': 'list',
-                'folder_path': '/home',
-                '_sid': sid
-            }
-            list_response = session.get(f"{api_url}/entry.cgi", params=list_payload)
-            list_response.raise_for_status()
-            list_data = list_response.json()
-            return list_data
-        else:
-            raise Exception("Authentication failed")
-
-    # Streamlit app
-    st.title("Synology Data Viewer")
-
-    # Synology API credentials (consider securing these in a more appropriate way for production)
-    api_url = "http://10.10.52.142:5000/webapi"
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-
-    if st.button("Fetch Data"):
-        try:
-            data = get_synology_data(api_url, username, password)
-            st.json(data)
-        except Exception as e:
-            st.error(f"Error fetching data: {e}")
+    #\\
 
 # Content of tab1 (Form)
 with tab1:
