@@ -9,7 +9,7 @@ import requests
 tab1, tab2 = st.tabs(["Form", "Search"])
 
 #Shows the contant of tab2 (Search)
-with tab2:
+#with tab2:
     #\\
 
 # Content of tab1 (Form)
