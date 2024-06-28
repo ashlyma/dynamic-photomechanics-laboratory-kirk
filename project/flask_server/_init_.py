@@ -84,6 +84,10 @@ def create_directory():
             '_sid': sid
         }
         response = requests.post(create_url, data=create_payload)
+
+  # Log the response from Synology API
+        print(response.json())
+        
         return jsonify(response.json())
     except Exception as e:
         return jsonify({'error': str(e)})

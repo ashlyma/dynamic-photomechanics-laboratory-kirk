@@ -72,7 +72,7 @@ with tab1:
     st.write(directory_name)    
     
     if st.button("Create"):
-        response = requests.post("http://<Your Codespace IP>:5000/create_directory", json={"target_folder": directory_name})
+        response = requests.post("http://localhost:5000/create_directory", json={"target_folder": directory_name})
         if response.status_code == 200:
             st.success("Directory created successfully")
         else:
