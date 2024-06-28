@@ -68,5 +68,12 @@ with tab1:
 
     #The button used to create the directory
     st.write("Directory file name:")
-    st.write(username_textbox, "/", facility_type_main_option, "/",facility_type_sub_option, "/", "[", Date_form,"/", material_type_option,"/", "Trial:", trial_input, "]")
-    st.button("Create")
+    directory_name = f"{username_textbox}/{facility_type_main_option}/{facility_type_sub_option}/{Date_form}/{material_type_option}/Trial:{trial_input}"
+    st.write(directory_name)    
+    
+    if st.button("Create"):
+        response = requests.post("http://<Your Codespace IP>:5000/create_directory", json={"target_folder": directory_name})
+        if response.status_code == 200:
+            st.success("Directory created successfully")
+        else:
+            st.error("Failed to create directory")
