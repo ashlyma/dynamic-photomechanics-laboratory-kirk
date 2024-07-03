@@ -71,9 +71,11 @@ with tab1:
     directory_name = f"{username_textbox}/{facility_type_main_option}/{facility_type_sub_option}/{Date_form}/{material_type_option}/Trial:{trial_input}"
     st.write(directory_name)    
     
-    if st.button("Create"):
-        response = requests.post("http://localhost:5000/create_directory", json={"target_folder": directory_name})
-        if response.status_code == 200:
-            st.success("Directory created successfully")
-        else:
-            st.error("Failed to create directory")
+if st.button("Create"):
+    st.write(f"Creating directory...: {directory_name}")
+    response = requests.post("http://localhost:5000/create_directory", json={"target_folder": directory_name})
+    st.write(response.json())  # Log the response
+    if response.status_code == 200:
+        st.success("Directory created successfully")
+    else:
+        st.error("Failed to create directory")

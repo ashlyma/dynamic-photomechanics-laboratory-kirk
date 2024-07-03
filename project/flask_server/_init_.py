@@ -21,14 +21,19 @@ def get_session_id():
         'session': 'FileStation',
         'format': 'sid'
     }
-    login_response = requests.get(login_url, params=login_payload)
-    login_data = login_response.json()
+    try:
+        login_response = requests.get(login_url, params=login_payload, timeout=10)  # Set timeout to 10 seconds
+        login_data = login_response.json()
+        
+        if login_data['success']:
+            return login_data['data']['sid']
+        else:
+            raise Exception('Authentication failed.')
+    except requests.exceptions.Timeout:
+        raise Exception('Connection to Synology NAS timed out.')
+    except requests.exceptions.RequestException as e:
+        raise Exception(f'Error connecting to Synology NAS: {e}')
     
-    if login_data['success']:
-        return login_data['data']['sid']
-    else:
-        raise Exception('Authentication failed.')
-
 @app.route('/')
 def home():
     return "Flask server is running!"
@@ -73,24 +78,29 @@ def search_files():
 @app.route('/create_directory', methods=['POST'])
 def create_directory():
     try:
+        app.logger.info("Received request to create directory")
         sid = get_session_id()
+        app.logger.info(f"Obtained session ID: {sid}")
         target_folder = request.json.get('target_folder')
+        app.logger.info(f"Target folder: {target_folder}")
         create_url = f'http://{NAS_IP}:{PORT}/webapi/entry.cgi'
         create_payload = {
             'api': 'SYNO.FileStation.CreateFolder',
             'version': '2',
             'method': 'create',
-            'folder_path': target_folder,
+            'folder_path': '/volume1/DPML Shared Folder',
+            'name': 'directory_name',  # Adding a name parameter
             '_sid': sid
         }
         response = requests.post(create_url, data=create_payload)
-
-  # Log the response from Synology API
-        print(response.json())
+        
+        # Log the response from Synology API
+        app.logger.info(f"Response from Synology API: {response.json()}")
         
         return jsonify(response.json())
     except Exception as e:
+        app.logger.error(f"Error in create_directory: {e}")
         return jsonify({'error': str(e)})
-
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
