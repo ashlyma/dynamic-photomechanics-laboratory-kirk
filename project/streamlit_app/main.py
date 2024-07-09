@@ -39,24 +39,37 @@ with tab1:
         "UTM (Static)": ["","Tension", "Compression", "Shear", "Three Point Bending","Four Point Bending" "Peel", "Other"],
     }
 
-    # facility sub options appeared based on the facility selected
+    # facility sub options appear based on the facility selected
     facility_type_main_option = st.selectbox("Facility Type:", list(facility_options.keys()))
     if facility_type_main_option:
         facility_type_sub_option = st.selectbox(f"Experiment type for {facility_type_main_option}:", facility_options[facility_type_main_option])
         facility_type_sub_option  = other_textbox(facility_type_sub_option, "facility type", key="facility_other")
-
+    
+    if facility_type_sub_option == "UNDEX":
     # Material, trial, input load and load type questions
-    material_type_option = st.selectbox("Material type:", ("None","Metallic","Composite","Polymer","Ceramic","Other"))
-    material_type_option = other_textbox(material_type_option, "material type", key="material_other")
+        material_type_option = st.selectbox("Material type:", ("None","Metallic","Composite","Polymer","Ceramic","Other"))
+        material_type_option = other_textbox(material_type_option, "material type", key="material_other")
+        charge_type = st.selectbox("Charge type:", ("None","RP87","RP80","RP501","RP502","RP503","Other"))
+        charge_type = other_textbox(charge_type, "Charge type:", key="charge_type_other")
+        trial_input = st.number_input("Trial #:", min_value=0, step=1, placeholder="Enter trial number...")
 
-    input_load_type = st.text_input("Input (Load) Magnitude in SI Units:", placeholder="Enter Magnitude")
-    load_type_option = st.selectbox("Load Type:", ("None","Force (kN)", "Pressure (MPa)", "Energy (J)", "Displacement (mm)", "Velocity (m/s)", "Acceleration (m/s^2)", "Other"))
-    load_type_option = other_textbox(load_type_option, "load type", key="load_other")
+    else:
+        # Material, trial, input load and load type questions
+        material_type_option = st.selectbox("Material type:", ("None","Metallic","Composite","Polymer","Ceramic","Other"))
+        material_type_option = other_textbox(material_type_option, "material type", key="material_other")
 
-    trial_input = st.number_input("Trial #:", min_value=0, step=1, placeholder="Enter trial number...")
+        input_load_type = st.text_input("Input (Load) Magnitude in SI Units:", placeholder="Enter Magnitude")
+        load_type_option = st.selectbox("Load Type:", ("None","Force (kN)", "Pressure (MPa)", "Energy (J)", "Displacement (mm)", "Velocity (m/s)", "Acceleration (m/s^2)", "Other"))
+        load_type_option = other_textbox(load_type_option, "load type", key="load_other")
+
+        trial_input = st.number_input("Trial #:", min_value=0, step=1, placeholder="Enter trial number...")
 
     # Directory name variable and writes the directory name in the  bottom of the program
-    directory_name =  f"{username_textbox}-{facility_type_main_option}-{facility_type_sub_option}-{Date_form}-{material_type_option}-Trial-{trial_input}"
+    if facility_type_sub_option == "UNDEX":
+        directory_name = f"{username_textbox}/{facility_type_main_option}/{facility_type_sub_option}/{username_textbox}-{material_type_option}-{charge_type}-{Date_form}-Trial-{trial_input}"
+
+    else:
+        directory_name = f"{username_textbox}/{facility_type_main_option}/{facility_type_sub_option}/{username_textbox}-{material_type_option}-{input_load_type}-{Date_form}-Trial-{trial_input}"
     st.write("Directory:", directory_name)
 
     if st.button("Create Directory"):
@@ -89,4 +102,3 @@ with tab1:
                     st.success(f"Directory '{directory_name}' created successfully at '{full_path}'")
                 except OSError as e:
                     st.error(f"Failed to create directory: {e}")
-
