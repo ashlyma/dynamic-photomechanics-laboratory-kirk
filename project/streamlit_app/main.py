@@ -45,6 +45,9 @@ with tab1:
         facility_type_sub_option = st.selectbox(f"Experiment type for {facility_type_main_option}:", facility_options[facility_type_main_option])
         facility_type_sub_option  = other_textbox(facility_type_sub_option, "facility type", key="facility_other")
     
+    input_load_type = ""  # Initialize input_load_type to avoid NameError
+    load_type_option = ""
+
     if facility_type_sub_option == "UNDEX":
     # Material, trial, input load and load type questions
         material_type_option = st.selectbox("Material type:", ("None","Metallic","Composite","Polymer","Ceramic","Other"))
@@ -70,9 +73,10 @@ with tab1:
 
     else:
         directory_name = f"{username_textbox}/{facility_type_main_option}/{facility_type_sub_option}/{username_textbox}-{material_type_option}-{input_load_type}-{Date_form}-Trial-{trial_input}"
+    
     st.write("Directory:", directory_name)
 
-    if st.button("Create Directory"):
+    if st.button("Create"):
         # Validate required fields
         if not username_textbox:
             st.error("Please enter your name.")
@@ -82,10 +86,10 @@ with tab1:
             st.error("Please select an experiment type.")
         elif material_type_option == "None":
             st.error("Please select a material type.")
-        elif not input_load_type:
-            st.error("Please enter the input load magnitude.")
-        elif load_type_option == "None":
-            st.error("Please select a load type.")
+        elif not input_load_type and not charge_type:
+            st.error("Please enter load magnitude or the charge type.")
+        elif load_type_option == "None"and not charge_type:
+            st.error("Please select a load type or charge type.")
         elif trial_input == 0:
             st.error("Please enter a trial number.")
         else:
@@ -102,3 +106,54 @@ with tab1:
                     st.success(f"Directory '{directory_name}' created successfully at '{full_path}'")
                 except OSError as e:
                     st.error(f"Failed to create directory: {e}")
+
+# Content under the tab 2 (Search)
+with tab2:
+    st.header("Search NAS Directory")
+
+    # Initialize session state for current path
+    if 'current_path' not in st.session_state:
+        st.session_state.current_path = nas_path
+
+    # Get current path from session state
+    current_path = st.session_state.current_path
+
+    # Search bar
+    search_query = st.text_input("Search for files or directories:", "")
+
+    # Breadcrumb navigation
+    st.write("Current Directory:", current_path)
+    if current_path != nas_path:
+        if st.button("Back"):
+            # Move to parent directory
+            st.session_state.current_path = os.path.dirname(current_path)
+            current_path = st.session_state.current_path
+
+    # Display contents of the current directory
+    try:
+        items = os.listdir(current_path)
+        items.insert(0, "..")  # Option to go back to parent directory
+
+        # Filter items based on search query
+        if search_query:
+            items = [item for item in items if search_query.lower() in item.lower()]
+
+        if items:
+            for item in items:
+                item_path = os.path.join(current_path, item)
+                display_name = f"📁 {item}" if os.path.isdir(item_path) else f"📄 {item}"
+                if st.button(display_name):
+                    if item == "..":
+                        # Move to parent directory
+                        st.session_state.current_path = os.path.dirname(current_path)
+                        current_path = st.session_state.current_path
+                    elif os.path.isdir(item_path):
+                        # Move into the selected directory
+                        st.session_state.current_path = item_path
+                        current_path = st.session_state.current_path
+                    else:
+                        st.write(f"📄 {item}")
+        else:
+            st.write("No files or directories found.")
+    except Exception as e:
+        st.error(f"An error occurred while accessing the NAS path: {e}")
