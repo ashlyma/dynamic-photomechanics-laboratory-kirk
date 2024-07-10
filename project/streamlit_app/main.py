@@ -109,7 +109,7 @@ with tab1:
 
 # Content under the tab 2 (Search)
 with tab2:
-    st.header("Search NAS Directory")
+    st.header("SearchD PML_Projects")
 
     # Initialize session state for current path
     if 'current_path' not in st.session_state:
@@ -118,11 +118,12 @@ with tab2:
     # Get current path from session state
     current_path = st.session_state.current_path
 
-    # Search bar
+    # Search bar with a search button
     search_query = st.text_input("Search for files or directories:", "")
+    search_button = st.button("Search")
 
     # Breadcrumb navigation
-    st.write("Current Directory:", current_path)
+    st.write("Current path:", current_path)
     if current_path != nas_path:
         if st.button("Back"):
             # Move to parent directory
@@ -134,8 +135,8 @@ with tab2:
         items = os.listdir(current_path)
         items.insert(0, "..")  # Option to go back to parent directory
 
-        # Filter items based on search query
-        if search_query:
+        # Filter items based on search query if the search button is pressed
+        if search_button and search_query:
             items = [item for item in items if search_query.lower() in item.lower()]
 
         if items:
