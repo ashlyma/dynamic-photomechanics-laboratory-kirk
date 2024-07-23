@@ -62,18 +62,39 @@ with tab1:
         material_type_option = other_textbox(material_type_option, "material type", key="material_other")
 
         input_load_type = st.text_input("Input (Load) Magnitude in SI Units:", placeholder="Enter Magnitude")
-        load_type_option = st.selectbox("Load Type:", ("None","Force (kN)", "Pressure (MPa)", "Energy (J)", "Displacement (mm)", "Velocity (m/s)", "Acceleration (m/s^2)", "Other"))
-        load_type_option = other_textbox(load_type_option, "load type", key="load_other")
 
-        trial_input = st.number_input("Trial #:", min_value=0, step=1, placeholder="Enter trial number...")
+    # Facility sub options appear based on the facility selected
+    load_type_array = {
+    "None": [],
+    "Force (kN)": ["kN"],
+    "Pressure (MPa)": ["MPa"],
+    "Energy (J)": ["J"],
+    "Displacement (mm)": ["mm"],
+    "Velocity (ms^-1)": ["ms^-1"],
+    "Acceleration (ms^-2)": ["ms^-2"],
+    "Other": [""],  # This might cause issues when accessing [0]
+}
 
-    # Directory name variable and writes the directory name in the  bottom of the program
+    # Select the load type from the dropdown
+    load_type_options = st.selectbox("Load type:", list(load_type_array.keys()))
+    # Capture the other load type if "Other" is selected
+    other_type_option = st.text_input("Specify other load type", key="load_other") if load_type_options == "Other" else ""
+
+    trial_input = st.number_input("Trial #:", min_value=0, step=1, placeholder="Enter trial number...")
+
+    # Extract the unit of the load type or use the other type option
+    if load_type_options == "Other":
+        load_type_unit = other_type_option
+    else:
+        load_type_unit = load_type_array[load_type_options][0] if load_type_array[load_type_options] else ""
+
+    # Directory name variable and writes the directory name in the bottom of the program
     if facility_type_sub_option == "UNDEX":
         directory_name = f"{username_textbox}/{facility_type_main_option}/{facility_type_sub_option}/{username_textbox}-{material_type_option}-{charge_type}-{Date_form}-Trial-{trial_input}"
-
     else:
-        directory_name = f"{username_textbox}/{facility_type_main_option}/{facility_type_sub_option}/{username_textbox}-{material_type_option}-{input_load_type}-{Date_form}-Trial-{trial_input}"
-    
+        directory_name = f"{username_textbox}/{facility_type_main_option}/{facility_type_sub_option}/{username_textbox}-{material_type_option}-{input_load_type}{load_type_unit}-{Date_form}-Trial-{trial_input}"
+
+    # Display the directory name
     st.write("Directory:", directory_name)
 
     if st.button("Create"):
@@ -106,6 +127,7 @@ with tab1:
                     st.success(f"Directory '{directory_name}' created successfully at '{full_path}'")
                 except OSError as e:
                     st.error(f"Failed to create directory: {e}")
+
 
 # Content under the tab 2 (Search)
 with tab2:
