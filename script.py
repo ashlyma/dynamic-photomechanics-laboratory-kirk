@@ -1,16 +1,24 @@
 import streamlit as st
 import os
 import datetime
+import win32api  # Make sure pywin32 is installed
 
-# NAS local path as variable
-nas_path = "Z:\\DPML_Projects"
+# Function to get available drives with labels on Windows
+def get_available_drives():
+    drives = []
+    for letter in win32api.GetLogicalDriveStrings().split('\000')[:-1]:  # Split the drive letters
+        try:
+            drive_label = win32api.GetVolumeInformation(letter)[0]  # Get the drive label
+            drives.append((letter, drive_label))
+        except Exception as e:
+            drives.append((letter, "Unknown"))
+    return drives
 
 # Streamlit User Interface
-tab1, tab2 = st.tabs(["Home", "Search"])
+tab1, tab2 = st.tabs(["Create", "Search"])
 
-# Content under the tab 1 (Home)
+# Content under tab 1 (Home)
 with tab1:
-
     def other_textbox(selected_option, label, key):
         if selected_option == "Other":
             selected_option = st.text_input(f"Specify {label}:", key=key)
@@ -100,6 +108,15 @@ with tab1:
         else:
             load_type_unit = load_type_array[load_type_options][0] if load_type_array[load_type_options] else ""
 
+    # Add the "Select Drive" dropdown
+    available_drives = get_available_drives()
+    drive_labels = [f"{letter} ({label})" for letter, label in available_drives]
+    selected_drive_index = st.selectbox("Select a Drive:", range(len(drive_labels)), format_func=lambda x: drive_labels[x])
+    selected_drive = available_drives[selected_drive_index][0]
+
+    # Set the directory path
+    st.session_state.user_directory_path = os.path.join(selected_drive, username_textbox)
+
     # Directory name variable and display the directory name and create button
     if facility_type_sub_option == "UNDEX":
         directory_name = f"{username_textbox}/{facility_type_main_option}/{facility_type_sub_option}/{username_textbox}-{material_type_option}-{charge_type}-{Date_form}-Trial-{trial_input}"
@@ -109,13 +126,11 @@ with tab1:
     # Display the directory name
     st.write("Directory:", directory_name)
 
-    # Initialize session state variables to store the created directory path and user directory path
+    # Initialize session state variables to store the created directory path
     if 'created_directory_path' not in st.session_state:
         st.session_state.created_directory_path = ""
-    if 'user_directory_path' not in st.session_state:
-        st.session_state.user_directory_path = os.path.join(nas_path, username_textbox)
 
-    if st.button("Create"):
+    if st.button("Create", key="create_directory"):
         # Validate required fields
         if not username_textbox:
             st.error("Please enter your name.")
@@ -132,8 +147,8 @@ with tab1:
         elif trial_input == 0:
             st.error("Please enter a trial number.")
         else:
-            # Combine NAS path with folder name to create full path
-            full_path = os.path.join(nas_path, directory_name)
+            # Combine selected drive path with folder name to create full path
+            full_path = os.path.join(st.session_state.user_directory_path, directory_name)
 
             # Checks if the directory already exists
             if os.path.exists(full_path):
@@ -152,7 +167,7 @@ with tab1:
     # Display the "Open Directory" button if the directory was created
     if st.session_state.created_directory_path:
         # Create a button to open the directory
-        if st.button("Open Directory"):
+        if st.button("Open Directory", key="open_directory"):
             try:
                 # Check if the directory exists before trying to open it
                 if os.path.exists(st.session_state.created_directory_path):
@@ -163,54 +178,39 @@ with tab1:
             except Exception as e:
                 st.error(f"Failed to open directory: {e}")
 
-# Content under the tab 2 (Search)
+# Content under tab 2 (Search)
 with tab2:
-    st.header("Search DPML_Projects")
+    st.header("Search Files and Folders")
 
     # Initialize session state for current path
     if 'current_path' not in st.session_state:
-        st.session_state.current_path = nas_path
-
-    # Get current path from session state
-    current_path = st.session_state.current_path
-
-    # Search bar with a search button
-    search_query = st.text_input("Search for files or directories:", "")
-    search_button = st.button("Search")
-
-    # Breadcrumb navigation
-    st.write("Current path:", current_path)
-    if current_path != nas_path:
-        if st.button("Back"):
-            # Move to parent directory
-            st.session_state.current_path = os.path.dirname(current_path)
-            current_path = st.session_state.current_path
-
-    # Display contents of the current directory
-    try:
-        items = os.listdir(current_path)
-        items.insert(0, "..")  # Option to go back to parent directory
-
-        # Filter items based on search query if the search button is pressed
-        if search_button and search_query:
-            items = [item for item in items if search_query.lower() in item.lower()]
-
-        if items:
-            for item in items:
-                item_path = os.path.join(current_path, item)
-                display_name = f"📁 {item}" if os.path.isdir(item_path) else f"📄 {item}"
-                if st.button(display_name):
-                    if item == "..":
-                        # Move to parent directory
-                        st.session_state.current_path = os.path.dirname(current_path)
-                        current_path = st.session_state.current_path
-                    elif os.path.isdir(item_path):
-                        # Move into the selected directory
-                        st.session_state.current_path = item_path
-                        current_path = st.session_state.current_path
-                    else:
-                        st.write(f"📄 {item}")
+        if 'user_directory_path' in st.session_state:
+            st.session_state.current_path = st.session_state.user_directory_path
         else:
-            st.write("No files or directories found.")
-    except Exception as e:
-        st.error(f"An error occurred while accessing the NAS path: {e}")
+            st.session_state.current_path = None
+
+    # Display the current path to search within
+    if st.session_state.current_path:
+        st.write(f"Current Search Path: {st.session_state.current_path}")
+    else:
+        st.warning("Please create a directory in the 'Create' tab before searching.")
+
+    # File or folder name input
+    search_query = st.text_input("Enter file or folder name:")
+
+    # Handle the search
+    if st.button("Search", key="search"):
+        if st.session_state.current_path:
+            search_results = []
+            for root, dirs, files in os.walk(st.session_state.current_path):
+                for name in files + dirs:
+                    if search_query.lower() in name.lower():
+                        search_results.append(os.path.join(root, name))
+            if search_results:
+                st.write("Search Results:")
+                for result in search_results:
+                    st.write(result)
+            else:
+                st.write("No matching files or folders found.")
+        else:
+            st.error("Please create a directory before searching.")
